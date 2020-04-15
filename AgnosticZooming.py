@@ -16,7 +16,7 @@ from collections import defaultdict
 V_H = 1
 V_L = 0.3
 THETA_H = 0.8
-F = np.array([[1,0], [1-THETA_H, THETA_H]])
+F = np.array([[1,0], [1, THETA_H]])
 
 def plot_perf_over_time(phi,utilities):
     fig = plt.figure()
@@ -30,11 +30,14 @@ def cal_utility(c, x):
     Pr = THETA_H if action_idx == 1 else 0 #Pr[high outcome|x]
     arb_num = np.random.uniform(0,1) 
     if Pr == 0 or arb_num > Pr : 
-      Vx = V_L 
+        Vx = V_L
+        Px = x[0]
     elif arb_num <= Pr :   
-      Vx = V_H  
+        Vx = V_H  
+        Px = x[0] + x[1]
     #Vx = V_H*Pr + V_L*(1-Pr) #expected value
-    Px = x[action_idx] #expected payment
+    #Px = x[action_idx] #expected payment
+    #Px = x[0] if action_idx == 0 else x[0]+x[1]
     Ux = Vx - Px #requester's utility
     
     return Vx, Px, Ux
@@ -230,16 +233,16 @@ def act_cells(A,max_cell,phi, X_cand):
 
     A.remove(max_cell)
 
-def agnostic_zooming(phi):
+def agnostic_zooming(phi,T):
     X_cand = [phi * i for i in range(int(1/phi)+1)] 
     A = [Cell([[0,1]] * 2,0,phi)] 
     utilities = []
     #c_h = np.random.uniform(0,1) #homogenous worker market
     # c_h1 = np.random.uniform(0.1,0.2)
     # c_h2 = np.random.uniform(0.5,0.6)
-    for t in range(5000):
-        c_h1 = np.random.uniform(0.1,0.2)
-        c_h2 = np.random.uniform(0.5,0.6)
+    for t in range(T):
+        c_h1 = np.random.uniform(0.1,0.2) #low effort level
+        c_h2 = np.random.uniform(0.5,0.6) #high effort level
         c_h = [c_h1, c_h2] #two_type market 
         max_It = float('-inf')
         max_cell = A[0]
@@ -265,7 +268,7 @@ def agnostic_zooming(phi):
         # if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 3) : 
             act_cells(A,max_cell, phi, X_cand) 
     
-    return np.mean(utilities)
+    return utilities
 
 
 
