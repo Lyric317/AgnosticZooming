@@ -60,11 +60,11 @@ class Cell:
 
     def upper_confidence(self): #radt(C) = 1 ## it seems constant does not perform better in 2 Dim - YD 
         if self.atomic == 1: #atomic
-            #It = self.acc_utility + self.rad 
-            It = self.acc_utility + 1
+            It = self.acc_utility + self.rad 
+            # It = self.acc_utility + 1
         elif self.atomic == 0: #composite
-            #It = self.acc_utility + self.acc_width + 5 * self.rad 
-            It = self.acc_utility + self.acc_width + 5 
+            It = self.acc_utility + self.acc_width + 5 * self.rad 
+            # It = self.acc_utility + self.acc_width + 5 
         return It
 
     ## check if a cell is atomic 
@@ -101,7 +101,7 @@ class Cell:
         self.HL_act_times[hl] += 1
 
         # new strategy adpation, original is * log(T) 
-        self.rad = np.sqrt(c_rad * np.log(step)/ self.act_times) if step >= 1 else 0 
+        self.rad = np.sqrt(c_rad * np.log(self.act_times)/ self.act_times) 
         
         return Ux 
     
@@ -216,9 +216,7 @@ def agnostic_zooming(phi,T, contract_param):
     X_cand = [phi * i for i in range(int(1/phi)+1)] 
     A = [Cell([[0,1]] * 2,0,phi)] 
     utilities = []
-    #c_h = np.random.uniform(0,1) #homogenous worker market
-    # c_h1 = np.random.uniform(0.1,0.2)
-    # c_h2 = np.random.uniform(0.5,0.6)
+
     for t in range(T):
         c_h1 = np.random.uniform(0.1,0.2) #low effort level
         c_h2 = np.random.uniform(0.5,0.6) #high effort level
@@ -242,7 +240,7 @@ def agnostic_zooming(phi,T, contract_param):
         utility = max_cell.activate_cell(c_h, X_cand, t, contract_param) 
         utilities.append(utility)
         
-        if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 5 * max_cell.rad) : #radt(C) = 0.6
+        if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 3 * max_cell.rad) : #radt(C) = 0.6
         # if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 3) : 
             act_cells(A,max_cell, phi, X_cand) 
     
