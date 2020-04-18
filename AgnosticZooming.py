@@ -60,11 +60,11 @@ class Cell:
 
     def upper_confidence(self): #radt(C) = 1 ## it seems constant does not perform better in 2 Dim - YD 
         if self.atomic == 1: #atomic
-            #It = self.acc_utility + self.rad 
-            It = self.acc_utility + 1
+            It = self.acc_utility + self.rad 
+            #It = self.acc_utility + 1
         elif self.atomic == 0: #composite
-            #It = self.acc_utility + self.acc_width + 5 * self.rad 
-            It = self.acc_utility + self.acc_width + 5 
+            It = self.acc_utility + self.acc_width + 5 * self.rad 
+            #It = self.acc_utility + self.acc_width + 5 
         return It
 
     ## check if a cell is atomic 
@@ -99,7 +99,9 @@ class Cell:
         self.HL_acc_utility[hl] = self.HL_acc_utility[hl] * self.act_times / (self.act_times + 1) + Ux * 1 / (self.act_times + 1) 
         self.act_times += 1 
         self.HL_act_times[hl] += 1
-
+        # if step > 5000 : 
+        #     print(["step: ", step, "cost: ", c_h, "x_cands: ", x_cands, "real pay: ",
+        #         Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width])  
         # new strategy adpation, original is * log(T) 
         self.rad = np.sqrt(c_rad * np.log(step)/ self.act_times) if step >= 1 else 0 
         
@@ -189,7 +191,7 @@ def act_cells(A,max_cell,phi, X_cand):
     #     A.append(Cell(p2,0))
     # A.remove(max_cell)
 
-    quadrants = quadrantize(max_cell, [[[0]], [[0]]], 0)  
+    quadrants = quadrantize(max_cell, [[[0]]]*2, 0)  
     for id, quadrant in enumerate(quadrants) : 
         temp_cell = Cell(quadrant, 0, phi)
         if id == 0 : 
@@ -207,7 +209,7 @@ def act_cells(A,max_cell,phi, X_cand):
                                  max_cell.HL_acc_utility,
                                  1) 
         # if contain 0 candidate contract, not adding to A 
-        if (temp_cell.check_atomic(X_cand) != -1) and (not temp_cell.p[0][0] > temp_cell.p[1][1]) :  
+        if (temp_cell.check_atomic(X_cand) != -1) and (temp_cell.p[0][1] <= temp_cell.p[1][0]):  
             A.append(temp_cell)  
 
     A.remove(max_cell)
@@ -221,7 +223,7 @@ def agnostic_zooming(phi,T, contract_param):
     # c_h2 = np.random.uniform(0.5,0.6)
     for t in range(T):
         c_h1 = np.random.uniform(0.1,0.2) #low effort level
-        c_h2 = np.random.uniform(0.5,0.6) #high effort level
+        c_h2 = np.random.uniform(0.3,0.4) #high effort level
         c_h = [c_h1, c_h2] #two_type market 
         max_It = float('-inf')
         max_cell = A[0]

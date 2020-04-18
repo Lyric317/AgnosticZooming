@@ -1,5 +1,5 @@
 import AgnosticZooming as az
-import AgnosticZooming as az2 
+import AgnosticZooming2 as az2 
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
@@ -14,10 +14,23 @@ parser.add_argument('--phi', const = 0.02, default = 0.02, nargs = '?', type = f
 parser.add_argument('--granularity', const = 30, default = 30, nargs = '?', type = int)   
 args = parser.parse_args()
 
-V = [1, 0.2]
-THETA_H = 0.9
+V = [0.3, 1]
+THETA_H = 0.8
 F = np.array([[1,0], [1-THETA_H, THETA_H]])
 contract_param = [F, V] 
+
+## moving average for plot 
+def moving_average(dta, window):
+    shape = dta.shape 
+    i = 0 
+    new_dta = np.zeros(shape)
+    while i <= shape[0] - 1:
+        if i < window : 
+            new_dta[i] = dta[i]
+        else : 
+            new_dta[i] = np.mean(dta[i-window:i])
+        i += 1 
+    return new_dta 
 
 ## Run for diff phi 
 def plot_diff_phi(granularity, steps, iteration) :
@@ -37,7 +50,7 @@ def plot_diff_phi(granularity, steps, iteration) :
             avg_utility.append(exp_utility)
 
         plt.plot(PHI, avg_utility, label = strat_name) 
-        plt.ylim(-0.2, 0.5)
+        plt.ylim(-0.5, 0.5)
     
     plt.legend() 
     fig.gca().set_xlabel(r'$\phi$')
@@ -47,16 +60,20 @@ def plot_diff_phi(granularity, steps, iteration) :
 ## Run for single phi 
 def plot_phi_performance(phi, iteration, steps) : 
     T = steps 
-    acc_utility = np.zeros(T)
-    for _ in range(iteration):
-        utility = az.agnostic_zooming(phi,T, contract_param)
-        acc_utility += np.array(utility)
-    avg_utility = np.array(acc_utility)/iteration
-
     fig = plt.figure()
-    l = plt.plot([i for i in range(T)], avg_utility)
-    plt.ylim(-0.2, 0.5)
-    plt.plot([i for i in range(T)], avg_utility)
+    for strat, strat_name in zip([az, az2],["az", "az2"]) : 
+        acc_utility = np.zeros(T)
+        for _ in range(iteration):
+            utility = az.agnostic_zooming(phi,T, contract_param)
+            acc_utility += np.array(utility)
+        avg_utility = acc_utility / iteration 
+        mov_avg_utility = moving_average(avg_utility, 20)
+        l = plt.plot([i for i in range(T)], mov_avg_utility, label = strat_name)
+    
+    plt.ylim(-0.5, 0.5)
+    plt.xlabel("Steps")
+    plt.ylabel("Average Utility")
+    plt.legend()
     fig.savefig('./phi-{0}.jpg'.format(phi)) 
 
 def main() : 

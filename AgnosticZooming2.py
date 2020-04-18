@@ -30,7 +30,7 @@ def cal_utility(c, x, contract_param):
     action_idx = np.argmax(np.matmul(F, np.array(x).T) - np.array(c))
     Pr = F[1,1] if action_idx == 1 else 0 #Pr[high outcome|x]
     arb_num = np.random.uniform(0,1) 
-    if Pr == 0 or arb_num > Pr : 
+    if Pr == 0 or arb_num > Pr : ## low outcome 
         Vx = V[0]
         Px = x[0]
     elif arb_num <= Pr :   
@@ -99,9 +99,13 @@ class Cell:
         self.HL_acc_utility[hl] = self.HL_acc_utility[hl] * self.act_times / (self.act_times + 1) + Ux * 1 / (self.act_times + 1) 
         self.act_times += 1 
         self.HL_act_times[hl] += 1
-
+        
+        # if step > 5000 : 
+        #     print(["step: ", step, "cost: ", c_h, "x_cands: ", x_cands, "real pay: ",
+        #         Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width])  
+        
         # new strategy adpation, original is * log(T) 
-        self.rad = np.sqrt(c_rad * np.log(self.act_times)/ self.act_times) 
+        self.rad = 1.7*np.sqrt((np.log(np.log(2 * self.act_times)) + 0.72 * np.log(52))/ self.act_times) 
         
         return Ux 
     
@@ -207,19 +211,19 @@ def act_cells(A,max_cell,phi, X_cand):
                                  max_cell.HL_acc_utility,
                                  1) 
         # if contain 0 candidate contract, not adding to A 
-        if (temp_cell.check_atomic(X_cand) != -1) and (not temp_cell.p[0][0] > temp_cell.p[1][1]) :  
+        if (temp_cell.check_atomic(X_cand) != -1) and (temp_cell.p[0][1] <= temp_cell.p[1][0]) :  
             A.append(temp_cell)  
 
     A.remove(max_cell)
 
-def agnostic_zooming(phi,T, contract_param):
+def agnostic_zooming(phi, T, contract_param):
     X_cand = [phi * i for i in range(int(1/phi)+1)] 
     A = [Cell([[0,1]] * 2,0,phi)] 
     utilities = []
 
     for t in range(T):
         c_h1 = np.random.uniform(0.1,0.2) #low effort level
-        c_h2 = np.random.uniform(0.5,0.6) #high effort level
+        c_h2 = np.random.uniform(0.3,0.4) #high effort level
         c_h = [c_h1, c_h2] #two_type market 
         max_It = float('-inf')
         max_cell = A[0]
