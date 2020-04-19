@@ -12,30 +12,36 @@ import copy
 import matplotlib.pyplot as plt
 from bisect import bisect_left, bisect
 from collections import defaultdict
-
+from environment import * 
 # V_H = 1
 # V_L = 0.2
 # THETA_H = 0.9
 # F = np.array([[1,0], [1-THETA_H, THETA_H]])
 
-def plot_perf_over_time(phi,utilities):
-    fig = plt.figure()
-    l = plt.plot([i for i in range(len(utilities))], utilities,label=phi)
-    plt.plot([i for i in range(len(utilities))], utilities, 'b*')
-    plt.axis([0,5000,-0.3,0.5])
-    fig.savefig('two_times_over_time_'+str(phi)+'.jpg')
+# def plot_perf_over_time(phi,utilities):
+#     fig = plt.figure()
+#     l = plt.plot([i for i in range(len(utilities))], utilities,label=phi)
+#     plt.plot([i for i in range(len(utilities))], utilities, 'b*')
+#     plt.axis([0,5000,-0.3,0.5])
+#     fig.savefig('two_times_over_time_'+str(phi)+'.jpg')
 
 def cal_utility(c, x, contract_param):
     F, V = contract_param
+    if np.max(np.matmul(F, np.array(x).T) - np.array(c)) < 0 : 
+        return 0, 0, 0 
     action_idx = np.argmax(np.matmul(F, np.array(x).T) - np.array(c))
-    Pr = F[1,1] if action_idx == 1 else 0 #Pr[high outcome|x]
+    Pr = F[1,1] #Pr[high outcome|x]
     arb_num = np.random.uniform(0,1) 
-    if Pr == 0 or arb_num > Pr : 
+    if action_idx == 1 : 
+        if arb_num > Pr : 
+            Vx = V[0]
+            Px = x[0]
+        else :   
+            Vx = V[1]  
+            Px = x[1]
+    else : 
         Vx = V[0]
         Px = x[0]
-    elif arb_num <= Pr :   
-        Vx = V[1]  
-        Px = x[1]
     #Vx = V_H*Pr + V_L*(1-Pr) #expected value
     #Px = x[action_idx] #expected payment
     #Px = x[0] if action_idx == 0 else x[0]+x[1]
@@ -57,6 +63,7 @@ class Cell:
         self.atomic = False  
         self.rad = 0 
         self.phi = phi 
+        self.It = 0 
 
     def upper_confidence(self): #radt(C) = 1 ## it seems constant does not perform better in 2 Dim - YD 
         if self.atomic == 1: #atomic
@@ -65,6 +72,7 @@ class Cell:
         elif self.atomic == 0: #composite
             It = self.acc_utility + self.acc_width + 5 * self.rad 
             #It = self.acc_utility + self.acc_width + 5 
+        self.It = It 
         return It
 
     ## check if a cell is atomic 
@@ -99,9 +107,11 @@ class Cell:
         self.HL_acc_utility[hl] = self.HL_acc_utility[hl] * self.act_times / (self.act_times + 1) + Ux * 1 / (self.act_times + 1) 
         self.act_times += 1 
         self.HL_act_times[hl] += 1
-        # if step > 5000 : 
+
+        # if step > 4500: 
         #     print(["step: ", step, "cost: ", c_h, "x_cands: ", x_cands, "real pay: ",
-        #         Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width])  
+        #         Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width, 
+        #         "It:", self.It])  
         # new strategy adpation, original is * log(T) 
         self.rad = np.sqrt(c_rad * np.log(step)/ self.act_times) if step >= 1 else 0 
         
@@ -192,16 +202,16 @@ def act_cells(A,max_cell,phi, X_cand):
     # A.remove(max_cell)
 
     quadrants = quadrantize(max_cell, [[[0]]]*2, 0)  
-    for id, quadrant in enumerate(quadrants) : 
+    for idx, quadrant in enumerate(quadrants) : 
         temp_cell = Cell(quadrant, 0, phi)
-        if id == 0 : 
+        if idx == 0 : 
             temp_cell = recover_cell(temp_cell,
                                  max_cell.HL_act_times,
                                  max_cell.acc_value,
                                  max_cell.acc_payment,
                                  max_cell.HL_acc_utility,
                                  0) 
-        if id == len(quadrants)-1 : 
+        if idx == len(quadrants)-1 : 
             temp_cell = recover_cell(temp_cell,
                                  max_cell.HL_act_times,
                                  max_cell.acc_value,
@@ -214,17 +224,18 @@ def act_cells(A,max_cell,phi, X_cand):
 
     A.remove(max_cell)
 
-def agnostic_zooming(phi,T, contract_param):
+def agnostic_zooming(phi,T, contract_param, type):
     X_cand = [phi * i for i in range(int(1/phi)+1)] 
     A = [Cell([[0,1]] * 2,0,phi)] 
+    env = environment(contract_param) 
     utilities = []
     #c_h = np.random.uniform(0,1) #homogenous worker market
     # c_h1 = np.random.uniform(0.1,0.2)
     # c_h2 = np.random.uniform(0.5,0.6)
     for t in range(T):
-        c_h1 = np.random.uniform(0.1,0.2) #low effort level
-        c_h2 = np.random.uniform(0.3,0.4) #high effort level
-        c_h = [c_h1, c_h2] #two_type market 
+        # c_h1 = np.random.uniform(0, 0) #low effort level
+        # c_h2 = np.random.uniform(c_h1, 1) #high effort level
+        c_h = env.cost_simulation(type, t) #two_type market 
         max_It = float('-inf')
         max_cell = A[0]
         max_id = 0 

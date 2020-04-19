@@ -18,6 +18,7 @@ V = [0.3, 1]
 THETA_H = 0.8
 F = np.array([[1,0], [1-THETA_H, THETA_H]])
 contract_param = [F, V] 
+TYPE = ["uniform", "two type", "homo"]
 
 ## moving average for plot 
 def moving_average(dta, window):
@@ -36,45 +37,51 @@ def moving_average(dta, window):
 def plot_diff_phi(granularity, steps, iteration) :
     T = steps  
     PHI = [0.01*i for i in range(1,granularity + 1)]
-    fig = plt.figure()
-    for strat, strat_name in zip([az, az2],["az", "az2"]) : 
-        avg_utility = []
-        for idx, phi in enumerate(PHI):
-            acc_utility = []
-            for _ in range(iteration):
-                utility = strat.agnostic_zooming(phi,T,contract_param)  
-                acc_utility.append(sum(utility)/len(utility))
-            exp_utility = sum(acc_utility)/len(acc_utility)
-            if idx % 10 == 0: 
-                print("We have run {0} iterations({1:.0%})".format(idx, idx / granularity))  
-            avg_utility.append(exp_utility)
+    for type in TYPE : 
+        fig = plt.figure()
+        for strat, strat_name in zip([az, az2],["az", "az2"]) : 
+            avg_utility = []
+            for idx, phi in enumerate(PHI):
+                acc_utility = []
+                for _ in range(iteration):
+                    utility = strat.agnostic_zooming(phi,T,contract_param, type)   
+                    acc_utility.append(np.mean(utility)) 
+                exp_utility = sum(acc_utility)/len(acc_utility)
+                if idx % 10 == 0: 
+                    print("We have run {0} iterations({1:.0%})".format(idx, idx / granularity))  
+                avg_utility.append(exp_utility)
 
-        plt.plot(PHI, avg_utility, label = strat_name) 
-        plt.ylim(-0.5, 0.5)
-    
-    plt.legend() 
-    fig.gca().set_xlabel(r'$\phi$')
-    fig.gca().set_ylabel('Average Utility') 
-    fig.savefig('./two_type.jpg')
+            plt.plot(PHI, avg_utility, label = strat_name) 
+            plt.ylim(-0.5, 0.5)
+        
+        plt.legend() 
+        plt.title("{0} market".format(type)) 
+        fig.gca().set_xlabel(r'$\phi$')
+        fig.gca().set_ylabel('Average Utility') 
+        fig.savefig('./{0}.jpg'.format(type)) 
 
 ## Run for single phi 
 def plot_phi_performance(phi, iteration, steps) : 
     T = steps 
-    fig = plt.figure()
-    for strat, strat_name in zip([az, az2],["az", "az2"]) : 
-        acc_utility = np.zeros(T)
-        for _ in range(iteration):
-            utility = az.agnostic_zooming(phi,T, contract_param)
-            acc_utility += np.array(utility)
-        avg_utility = acc_utility / iteration 
-        mov_avg_utility = moving_average(avg_utility, 20)
-        l = plt.plot([i for i in range(T)], mov_avg_utility, label = strat_name)
     
-    plt.ylim(-0.5, 0.5)
-    plt.xlabel("Steps")
-    plt.ylabel("Average Utility")
-    plt.legend()
-    fig.savefig('./phi-{0}.jpg'.format(phi)) 
+    for type in TYPE : 
+        fig = plt.figure()
+        for strat, strat_name in zip([az, az2],["az", "az2"]) : 
+            acc_utility = np.zeros(T)
+            for idx in range(iteration):
+                utility = strat.agnostic_zooming(phi,T, contract_param, type) 
+                acc_utility += np.array(utility)
+            avg_utility = acc_utility / iteration
+            
+            mov_avg_utility = moving_average(avg_utility, 30)
+            l = plt.plot([i for i in range(T)], mov_avg_utility, label = strat_name)
+        
+        plt.ylim(-0.5, 0.5)
+        plt.title("{0} market".format(type)) 
+        plt.xlabel("Steps")
+        plt.ylabel("Average Utility")
+        plt.legend()
+        fig.savefig('./phi-{0}-{1}.jpg'.format(phi, type))  
 
 def main() : 
     if args.plot_diff_phi : 
