@@ -58,7 +58,7 @@ def plot_diff_phi(granularity, steps, iteration) :
         plt.title("{0} market".format(type)) 
         fig.gca().set_xlabel(r'$\phi$')
         fig.gca().set_ylabel('Average Utility') 
-        fig.savefig('./{0}.jpg'.format(type)) 
+        fig.savefig('./{0}-{1}_steps.jpg'.format(type, steps)) 
 
 ## Run for single phi 
 def plot_phi_performance(phi, iteration, steps) : 
@@ -81,7 +81,7 @@ def plot_phi_performance(phi, iteration, steps) :
         plt.xlabel("Steps")
         plt.ylabel("Average Utility")
         plt.legend()
-        fig.savefig('./phi-{0}-{1}.jpg'.format(phi, type))  
+        fig.savefig('./phi-{0}-{1}-{2}_steps.jpg'.format(phi, type, steps))   
 
 def main() : 
     if args.plot_diff_phi : 

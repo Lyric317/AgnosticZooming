@@ -108,10 +108,10 @@ class Cell:
         self.act_times += 1 
         self.HL_act_times[hl] += 1
 
-        # if step > 4500: 
-        #     print(["step: ", step, "cost: ", c_h, "x_cands: ", x_cands, "real pay: ",
-        #         Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width, 
-        #         "It:", self.It])  
+        if step > 4500: 
+            print(["step: ", step, "cost: ", c_h, "x_cands: ", x_cands, "real pay: ",
+                Px, "Uti: ", Ux, "C range: ", self.p, "phi: ", self.phi, "width :", self.acc_width, 
+                "It:", self.It])  
         # new strategy adpation, original is * log(T) 
         self.rad = np.sqrt(c_rad * np.log(step)/ self.act_times) if step >= 1 else 0 
         
@@ -255,7 +255,7 @@ def agnostic_zooming(phi,T, contract_param, type):
         utility = max_cell.activate_cell(c_h, X_cand, t, contract_param) 
         utilities.append(utility)
         
-        if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 5 * max_cell.rad) : #radt(C) = 0.6
+        if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 4 * max_cell.rad) : #radt(C) = 0.6
         # if (max_cell.check_atomic(X_cand) == 0 and max_cell.acc_width > 3) : 
             act_cells(A,max_cell, phi, X_cand) 
     

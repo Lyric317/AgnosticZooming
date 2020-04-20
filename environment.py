@@ -7,19 +7,19 @@ class environment(object) :
 
     def cost_simulation(self, type, step) : 
         if type == "uniform" : 
-            c_h1 = np.random.uniform(0.1, 0) #low effort level
-            c_h2 = np.random.uniform(c_h1, 1) #high effort level
+            c_h1 = np.random.uniform(0.1, 0.2) #low effort level
+            c_h2 = np.random.uniform(0.3, 0.4) #high effort level
             self.C = [c_h1, c_h2] # unifrom 
 
         elif type == "two type" : 
-            c_h1 = np.random.uniform(0.1, 0) #low effort level
+            c_h1 = np.random.uniform(0.1, 1) #low effort level
             c_h2 = np.random.uniform(c_h1, 1, 2) #high effort level
             c_h2 = c_h2[0] if np.random.uniform(0,1) < 0.5 else c_h2[1] 
             self.C = [c_h1, c_h2] # two_type 
         
         elif type == "homo" : 
             if step == 1 : 
-                c_h1 = np.random.uniform(0.1, 0) #low effort level
+                c_h1 = np.random.uniform(0.1, 1) #low effort level
                 c_h2 = np.random.uniform(c_h1, 1) #high effort level
                 self.C = [c_h1, c_h2] # homo 
 
